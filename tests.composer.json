@@ -1,18 +1,13 @@
 {
-    "name": "alpha-zeta/validation",
-    "description": "php validation library",
-    "keywords": ["php", "validation"],
-    "type": "library",
-    "license": "MIT",
-    "authors": [
+    "require": {
+        "alpha-zeta/validation": "dev-master"
+    },
+    "repositories": [
         {
-            "name": "Alexey Zaytsev",
-            "email": "world.zay@gmail.com"
+            "type": "git",
+            "url": "https://github.com/JackRabbit911/validation"
         }
     ],
-    "require": {
-        "php": "^8.2"
-    },
     "autoload": {
         "psr-4": {
             "Az\\Validation\\": "vendor/alpha-zeta/validation/src/"
