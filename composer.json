@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Az\\Validation\\": "vendor/alpha-zeta/validation/src/"
+            "Az\\Validation\\": "src/"
         }
     },
     "require-dev": {
@@ -24,7 +24,7 @@
     },
     "autoload-dev": {
         "psr-4": { 
-            "Tests\\Az\\Validation\\": "vendor/alpha-zeta/validation/tests/"
+            "Tests\\Az\\Validation\\": "tests/"
         }
     }
 }
