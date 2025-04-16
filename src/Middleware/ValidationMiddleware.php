@@ -21,6 +21,9 @@ abstract class ValidationMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        $lang = $request->getAttribute('i18n')?->lang() ?? 'en';
+        $this->validation->setLang($lang);
+        
         $this->setPath();
         $path = rawurldecode(rtrim($request->getUri()->getPath(), '/'));
 
