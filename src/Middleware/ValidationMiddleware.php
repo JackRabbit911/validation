@@ -31,7 +31,8 @@ abstract class ValidationMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
         
-        $data = ($request->getMethod() === 'GET') ? $request->getQueryParams() : $request->getParsedBody();
+        $data = ($request->getMethod() === 'GET') ? $request->getQueryParams()
+            : $request->getParsedBody() ?? $request->getBody()->getContents();
         
         $this->setRules($request);
 
