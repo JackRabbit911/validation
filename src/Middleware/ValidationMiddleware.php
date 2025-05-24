@@ -30,9 +30,9 @@ abstract class ValidationMiddleware implements MiddlewareInterface
         if ($this->path && $this->path !== $path) {
             return $handler->handle($request);
         }
-        
+
         $data = ($request->getMethod() === 'GET') ? $request->getQueryParams()
-            : $request->getParsedBody() ?? $request->getBody()->getContents();
+            : $this->getData($request);
         
         $this->setRules($request);
 
@@ -82,4 +82,19 @@ abstract class ValidationMiddleware implements MiddlewareInterface
     }
 
     protected function debug(ServerRequestInterface $request, $data) {}
+
+    private function getData($request)
+    {
+        $data = $request->getBody()->getContents();
+
+        if (empty($data)) {
+            $data = $request->getParsedBody();
+        }
+
+        if (is_string($data)) {
+            $data = json_decode($data, true);
+        }
+
+        return $data;
+    }
 }
