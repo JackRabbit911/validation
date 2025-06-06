@@ -45,8 +45,7 @@ abstract class ValidationMiddleware implements MiddlewareInterface
         $GLOBALS['request'] = $request;
 
         return ($data) ? $handler->handle($request
-                ->withParsedBody($data)
-                ->withAttribute('validation', $this->validation))
+                ->withParsedBody($data))
             : $this->errorHandler($request);
     }
 
