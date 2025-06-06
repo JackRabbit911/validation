@@ -17,7 +17,9 @@ class DataValidation extends ValidationMiddleware
         $this->validation->rule('username', 'required|username|length(5, 15)')
             ->rule('email', 'required|email')
             ->rule('email', [$this->modelUser, 'isUniqueEmail'])
-            ->rule('password', 'required|password|minLength(8)');
+            ->rule('password', 'required|password|minLength(8)')
+            ->rule('confirm', 'required|confirm(:data)')
+            ->rule('agree', 'yes|boolean');
     }
 }
 ```
@@ -44,7 +46,9 @@ class DataValidation extends ValidationMiddleware
         $this->validation->rule('username', 'required|username|length(5, 15)')
             ->rule('email', 'required|email')
             ->rule('email', [$this->modelUser, 'isUniqueEmail'])
-            ->rule('password', 'required|password|minLength(8)');
+            ->rule('password', 'required|password|minLength(8)')
+            ->rule('confirm', 'required|confirm(:data)')
+            ->rule('agree', 'yes|boolean');
 
         $data = $request->getParsedBody();
         $session = $request->getAttribute('session');
@@ -54,7 +58,10 @@ class DataValidation extends ValidationMiddleware
             return new RedirectResponse($request->getServerParams()['HTTP_REFERER'], 302);
         }
 
-        return $handler->handle($request->withAttribute('validation', $this->validation));
+        unset($data['confirm']);
+        unset($data['agree']);
+
+        return $handler->handle($request->withParsedBody($data));
     }
 }
 ```
