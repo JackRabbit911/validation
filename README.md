@@ -1,27 +1,55 @@
 # Validation
 ## Install
 composer require alpha-zeta/validation
-## Usage
+## Usage 
+(for example)
 ```php
-use Az\Validation\Validation;
+use Az\Validation\Middleware\ValidationMiddleware;
+use Auth\Model\ModelUser;
+use Psr\Http\Message\ServerRequestInterface;
 
-class DataValidation implements MiddlewareInterface
+class DataValidation extends ValidationMiddleware
 {
-    protected Validation $validation;
+    public function __construct(private ModelUser $modelUser){}
 
-    public function __construct(Validation $validation)
-    {
-        $this->validation = $validation;
-    }
-
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler)
+    protected function setRules(ServerRequestInterface $request)
     {
         $this->validation->rule('username', 'required|username|length(5, 15)')
             ->rule('email', 'required|email')
-            ->rule('email', [$modelUser, 'isUniqueEmail'])
+            ->rule('email', [$this->modelUser, 'isUniqueEmail'])
+            ->rule('password', 'required|password|minLength(8)');
+    }
+}
+```
+### Or
+```php
+use Az\Validation\Validation;
+use Auth\Model\ModelUser;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+
+class DataValidation extends ValidationMiddleware
+{
+    public function __construct(
+        private Validation $validation,
+        private ModelUser $modelUser
+    ){}
+
+    public function process(
+        ServerRequestInterface $request,
+        RequestHandlerInterface $handler
+    ): ResponseInterface
+    {
+        $this->validation->rule('username', 'required|username|length(5, 15)')
+            ->rule('email', 'required|email')
+            ->rule('email', [$this->modelUser, 'isUniqueEmail'])
             ->rule('password', 'required|password|minLength(8)');
 
-        if (!$this->validation->check($request->getPasedBody(), $request->getUploadedFiles())) {
+        $data = $request->getParsedBody();
+        $session = $request->getAttribute('session');
+
+        if (!$this->validation->check($data)) {
             $session->flash('validation', $this->validation->getResponse());
             return new RedirectResponse($request->getServerParams()['HTTP_REFERER'], 302);
         }
