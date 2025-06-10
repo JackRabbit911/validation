@@ -13,18 +13,20 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 abstract class ApiValidationMiddleware implements MiddlewareInterface
 {
-    public function __construct(protected Validation $validation) {}
+    protected Validation $validation;
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        $this->validation = container()->get(Validation::class);
         $lang = $request->getHeaderLine('Accept-Language') ?? 'en';
         $this->validation->setLang($lang);
-
+        
         $this->setRules($request);
-
+        
         if (($response = $this->validate($request, $handler))) {
             return $response;
         }
+        
 
         $validation_response = $this->validation->getResponse();
 
