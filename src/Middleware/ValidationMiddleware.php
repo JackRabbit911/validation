@@ -11,12 +11,13 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 abstract class ValidationMiddleware implements MiddlewareInterface
 {
-    protected Validation $validation;
+    
     protected ?string $path = null;
+
+    public function __construct(protected Validation $validation){}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->validation = container()->get(Validation::class);
         $lang = $request->getAttribute('i18n')?->lang() ?? 'en';
         $this->validation->setLang($lang);
         
