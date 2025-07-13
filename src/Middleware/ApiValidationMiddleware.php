@@ -23,7 +23,7 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
         
         $this->setRules($request);
         
-        if (($response = $this->validate($request, $handler))) {
+        if (($response = $this->validate($request, $handler))) {           
             return $response;
         }
         
@@ -33,12 +33,15 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
         $validation_response = array_map(function ($a) {
             return [
                 'status' => $a['status'],
-                'msg' => $a['msg'],
+                'message' => $a['msg'],
+                'value' => $a['value'],
             ];
         }, $validation_response);
 
-        $validation_response['success'] = false;
-        return new JsonResponse($validation_response);
+        $response['success'] = false;
+        $response['error'] = $validation_response;
+
+        return new JsonResponse($response);
     }
 
     protected function setRules(ServerRequestInterface $request) {}
@@ -66,6 +69,10 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
 
         if (empty($data)) {
             $data = $request->getParsedBody();
+        }
+
+        if (empty($data)) {
+            $data = $request->getQueryParams();
         }
 
         if (is_string($data)) {
