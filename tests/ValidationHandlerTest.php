@@ -35,6 +35,8 @@ final class ValidationHandlerTest extends TestCase
     {
         $this->assertTrue($this->validator->regexp('Hello', '/\w/'));
         $this->assertFalse($this->validator->regexp('Hello', '/\d/'));
+        $this->assertTrue($this->validator->username('John Иванов'));
+        $this->assertFalse($this->validator->username('John <Иванов;'));
     }
 
     public function testFilter()
