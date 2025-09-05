@@ -115,7 +115,7 @@ class ValidationHandler
 
     public function inRange($value, $min, $max)
     {
-        return $min <= $value || $value <= $max;
+        return $min <= $value && $value <= $max;
     }
 
     public function inArray($value, ...$array)

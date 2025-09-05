@@ -105,6 +105,19 @@ final class ValidationHandlerTest extends TestCase
         $this->assertFalse($this->validator->validDate('01.06.2024'));
     }
 
+    public function testInRange()
+    {
+        $this->assertTrue($this->validator->inRange(15, 0, 21));
+        $this->assertTrue($this->validator->inRange(0, 0, 21));
+        $this->assertFalse($this->validator->inRange(0, 12, 21));
+    }
+
+    public function testInArray()
+    {
+        $this->assertTrue($this->validator->inArray('foo', 'bar', 'foo', 123));
+        $this->assertFalse($this->validator->inArray('foo', 'bar', 123));
+    }
+
     public function testNotEmpty()
     {
         $stream = (new StreamFactory())->createStream();
