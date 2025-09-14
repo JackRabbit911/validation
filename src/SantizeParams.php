@@ -23,8 +23,8 @@ trait SantizeParams
                 default:
                     if (is_string($param) && strpos($param, ':') === 0) {
                         $key = substr($param, 1);
-                        if (array_key_exists($key, $this->validation->data)) {
-                            $param = $this->validation->data[$key];
+                        if (array_key_exists($key, $this->data)) {
+                            $param = $this->data[$key];
                         }
                     }
             }
