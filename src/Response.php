@@ -2,134 +2,108 @@
 
 namespace Az\Validation;
 
-use Closure;
-use Psr\Http\Message\UploadedFileInterface;
-use ReflectionMethod;
-use ReflectionFunction;
-
-final class Response
+class Response implements ValidationResponseInterface
 {
-    private Message $msg;
-    private array $response = [];
     private array $msgKeys = [];
     private array $messages = [];
+    private array $errorData = [];
 
-    public function __construct(Message $msg)
+    public function __construct(private Message $msg) {}
+
+    public function getResponse(array $data): array
     {
-        $this->msg = $msg;
-    }
+        $response = [];
 
-    // public function set($name, $data)
-    // {
-    //     $this->response[$name] = $data;
-    // }
-
-    public function get($validator, $data, $files = [])
-    {
-        $keys = array_merge(array_keys($data), array_keys($files), array_keys($validator));
-        
-        foreach ($keys as $name) {
-            // if (isset($this->response[$name])) {
-            //     continue;
-            // }
-
-            if (isset($validator[$name]->e)) {
-                list($key, $params) = $this->getKeyParams($name, $validator[$name]->e);
-
-                if (isset($this->messages[$name])) {
-                    $msg[$name] = strtr($this->messages[$name], $params);
-                }
-
-                $this->response[$name] = [
-                    'status' => 'error',
-                    'value' => '',
-                    'msg' => $msg[$name] ?? $this->msg->get($key, $params),
-                    'key' => $key,
-                ];
-
-            } elseif (!is_array($data[$name]) || (is_array($data[$name]) && array_is_list($data[$name]))) {
-                $this->response[$name] = [
-                    'status' => 'success',
-                    'value' => $data[$name] ?? false,
-                    'msg' => $this->msg->get('success'),
-                ];
-
-                if (is_string($data[$name])) {
-                    $this->response[$name]['value'] = $data[$name];
-                } elseif ($data[$name] instanceof UploadedFileInterface) {
-                    $this->response[$name]['value'] = $data[$name]->getClientFilename();
-                }
+        foreach ($data as $name => $value) {
+            if (isset($this->errorData[$name])) {
+                $response[$name] = $this->getError($name);
+            } else {
+                $response[$name] = $this->getSuccess($value);
             }
         }
 
-        return $this->response;
+        return $response;
     }
 
-    public function setMsgKey($name, $key)
+    public function getApiResponse(array $data): array
+    {
+        $response = [];
+
+        foreach ($data as $name => $value) {
+            if (isset($this->errorData[$name])) {
+                $response[$name] = $this->getError($name);
+            }
+        }
+
+        return $response;
+    }
+
+    public function getMessage(string $key): string
+    {
+        return $this->msg->get($key);
+    }
+
+    public function setErrorData(string $key, string|callable $handler, array $params): void
+    {
+        $this->errorData[$key] = [
+            'key' => $handler,
+            'params' => $params,
+        ];
+    }
+
+    public function setMsgKey(string $name, string $key): void
     {
         $this->msgKeys[$name] = $key;
     }
 
-    public function setMessage($name, $msg)
+    public function setMessage(string $name, string $msg): void
     {
         $this->messages[$name] = $msg;
     }
 
-    public function addMsgPath($path)
+    public function addMsgPath(string $path): void
     {
         $this->msg->addMsgPath($path);
     }
 
-    public function setLang($lang)
+    public function setLang(string $lang): void
     {
         $this->msg->setLang($lang);
     }
 
-    private function getKeyParams($name, $e)
+    private function getSuccess(mixed $value): array
     {
-        if (is_array($e->handler) && method_exists($e->handler[0], $e->handler[1])) {
-            $reflect = new ReflectionMethod($e->handler[0], $e->handler[1]);
-        } elseif (is_string($e->handler)) {
-            if (function_exists($e->handler)) {
-                $reflect = new ReflectionFunction($e->handler);
-            } else {
-                $reflect = new ReflectionMethod($e->handler);
-            } 
-        } elseif ($e->handler instanceof Closure) {
-            $reflect = new ReflectionFunction($e->handler);
+        return [
+            'status' => 'success',
+            'value' => $value,
+        ];
+    }
+
+    private function getError(string $key): array
+    {
+        $msg_key = $this->errorData[$key]['key'];
+        $params = $this->errorData[$key]['params'];
+        $value = array_pop($params);
+
+        return [
+            'status' => 'error',
+            'value' => $value,
+            'msg' => $this->getMsg($key, $msg_key, $params),
+        ];
+    }
+
+    private function getMsg(string $name, string $key, array $params): string
+    {
+        if (isset($this->messages[$name])) {
+            return sprintf($this->messages[$name], ...$params);
         }
 
-        if (isset($reflect)) {
-            $msgKey = $this->msgKeys[$name] ?? $reflect->getShortName();
-
-            foreach ($reflect->getParameters() as $k => $refParam) {
-                $key = ':' . $refParam->getName();
-
-                if (!array_key_exists($k, $e->params)) {
-                    if ($refParam->isDefaultValueAvailable()) {
-                        $value = $refParam->getDefaultValue();
-                    }
-                } else {
-                    $value = $e->params[$k];
-                }
-
-                if (isset($value) && is_scalar($value)) {
-                    $result[$key] = $value;
-                }
-            }
-
-            $result[':name'] = $name;
-
-            $msgParams = $result ?? [];
-        } else {
-            $msgKey = $this->msgKeys[$name] ??  $e->handler[1] ?? 'default';
-            $msgParams = [];
+        if (isset($this->msgKeys[$name])) {
+            $key = $this->msgKeys[$name];
+        } elseif (is_array($key) && is_callable($key)) {
+            $key = $key[1];
         }
 
-        if (isset($e->key) && is_string($e->key)) {
-            $msgKey = $e->key;
-        }
-
-        return [$msgKey, $msgParams];
+        return $this->msg->get($key, $params);
     }
 }
