@@ -2,46 +2,60 @@
 
 namespace Az\Validation;
 
-final class Validation
+class Validation
 {
-    use ModifyData;
-
-    private Response $response;
-    private Parser $parser;
-    private Resolver $resolver;
-    private array $files = [];
-    private array $result = [];
-    private array $validator = [];
     public array $data = [];
+    private array $rules = [];
+    private array $check = [];
 
-    public function __construct(Response $response, Parser $parser, Resolver $resolver)
-    {
-        $this->response = $response;
-        $this->parser = $parser;
-        $this->resolver = $resolver;
-    }
+    public function __construct(private Response $response){}
 
     public function rule($name, $handler, ...$params)
     {
-        $v = $this->factory($name);
-        $v->rule($handler, ...$params);
+        $value = [
+            'handler' => $handler,
+            'params' => $params,
+        ];
+
+        if (!isset($this->rules[$name])) {
+            $this->rules[$name] = [$value];
+        } else {
+            $this->rules[$name][] = $value;
+        }
+
         return $this;
     }
 
-    public function check($data, $files = [])
+    public function check($data, $files = [], $dot_notation = false)
     {
-        $checkData = $this->checkData($data + $files);
-        return $checkData;
+        $this->data = $dot_notation ?
+            flattenDot($data + $files) :
+            flattenBracket($data + $files);
+
+        foreach (array_keys(array_diff_key($this->rules, $this->data)) as $key) {
+            $this->data[$key] = null;
+        }
+
+        $valid = new ValidationValue($this->response, $this->rules, $this->data);
+
+        foreach ($this->data as $key => $value) {
+            if (isset($this->rules[$key])) {
+                $this->check[$key] = $valid->check($value, $key);
+            }
+        }
+
+        return in_array(false, $this->check) ? false : true;
     }
 
-    // public function setResponse($name, $data)
-    // {
-    //     $this->response->set($name, $data);
-    // }
-
-    public function getResponse()
+    public function getResponse($is_api = false)
     {
-        return $this->response->get($this->validator, $this->data, $this->files);
+        return $is_api ?  $this->response->getApiResponse($this->data) :
+            $this->response->getResponse($this->data, array_keys($this->rules));
+    }
+
+    public function getMessage($key)
+    {
+        return $this->response->getMessage($key);
     }
 
     public function setMsgKey($name, $key)
@@ -66,38 +80,6 @@ final class Validation
         $this->response->setLang($lang);
         return $this;
     }
-
-    private function checkData(array $data): bool
-    {
-        $result = true;
-
-        foreach ($this->modifyData($data) as $name => $value) {
-            $check = true;
-
-            if (!is_array($value) || array_is_list($value)) {
-                if (isset($this->validator[$name])) {
-                    $check = $this->validator[$name]->check($value);
-                } else {
-                    $check = true;
-                }
-               
-                if ($check !== true) {
-                    $result = false;
-                } else {
-                    $this->data[$name] = $value;
-                }
-            }            
-        }
-
-        return $result;
-    }
-
-    private function factory($name)
-    {
-        if (!isset($this->validator[$name])) {
-            $this->validator[$name] = new ValidationValue($this->parser, $this->resolver, $this);          
-        }
-
-        return $this->validator[$name];
-    }
 }
+
+require_once 'library.php';
