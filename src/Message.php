@@ -23,16 +23,9 @@ final class Message
     {
         $this->setMessages();
 
-        $search = array_keys($params);
-        $replace = array_values($params);
-        
-
-        if (strpos($key, ' ') !== false) {
-            return str_replace($search, $replace, $key);
-        }
-
         $message = $this->messages[$key] ?? $this->messages[$default] ?? 'Invalid data';
-        return str_replace($search, $replace, $message);
+
+        return sprintf($message, ...$params);
     }
 
     public function setMsgKey($name, $key)
