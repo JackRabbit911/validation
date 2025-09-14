@@ -7,6 +7,7 @@ class Validation
     public array $data = [];
     private array $rules = [];
     private array $check = [];
+    private ?string $userHandler = null;
 
     public function __construct(private Response $response){}
 
@@ -36,7 +37,12 @@ class Validation
             $this->data[$key] = null;
         }
 
-        $valid = new ValidationValue($this->response, $this->rules, $this->data);
+        $valid = new ValidationValue(
+            $this->response,
+            $this->rules,
+            $this->data,
+            $this->userHandler,
+        );
 
         foreach ($this->data as $key => $value) {
             if (isset($this->rules[$key])) {
@@ -58,6 +64,12 @@ class Validation
         return $this->response->getMessage($key);
     }
 
+    public function setUserHandler(string $className)
+    {
+        $this->userHandler = $className;
+        return $this;
+    }
+
     public function setMsgKey($name, $key)
     {
         $this->response->setMsgKey($name, $key);
@@ -73,6 +85,7 @@ class Validation
     public function setMessage($name, $msg)
     {
         $this->response->setMessage($name, $msg);
+        return $this;
     }
 
     public function setLang($lang)

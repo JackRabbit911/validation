@@ -12,10 +12,11 @@ final class ValidationValue
     public function __construct(
         private Response $response,
         private array $rules,
-        private array $data
+        private array $data,
+        private ?string $userHandler,
     ) {
         $this->parser = new Parser();
-        $this->resolver = new Resolver(new ValidationHandler());
+        $this->resolver = new Resolver($userHandler);
     }
 
     public function check($value, $key)
