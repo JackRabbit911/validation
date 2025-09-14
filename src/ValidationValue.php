@@ -2,73 +2,60 @@
 
 namespace Az\Validation;
 
-use Psr\Http\Message\UploadedFileInterface;
-use stdClass;
-
 final class ValidationValue
 {
     use SantizeParams;
 
     private Parser $parser;
     private Resolver $resolver;
-    private Validation $validation;
-    public $rules = [];
-    public $e;
-    public array $uploaded = [];
 
-    public function __construct(Parser $parser, Resolver $resolver, Validation $validation)
-    {       
-        $this->parser = $parser;
-        $this->resolver = $resolver;
-        $this->validation = $validation;
+    public function __construct(
+        private Response $response,
+        private array $rules,
+        private array $data,
+        private ?string $userHandler,
+    ) {
+        $this->parser = new Parser();
+        $this->resolver = new Resolver($userHandler);
     }
 
-    public function rule($handler, ...$params)
+    public function check($value, $key)
     {
-        $this->rules = array_merge($this->rules, $this->parser->parse($handler, $params));
-        return $this;
-    }
+        $rule = $this->rules[$key];
+        $validate = function ($value, $rule, $is_array = false) use ($key) {
+            $field_rules = $this->parser->parse($rule);
 
-    public function check($value)
-    {
-        $validate = function ($value) {
-            foreach ($this->rules as $rule) {
+            foreach ($field_rules as $rule) {
+
                 $params = $this->santizeParams($rule->params, $value);
                 $handler = $this->resolver->resolve($rule->handler);
                 $result = call_user_func_array($handler, $params);
                 $result = ($rule->inverse) ? !$result : $result;
-                   
-                if ($result !== true) {
-                    $this->e = new stdClass;
-                    $this->e->handler = $handler;
-                    $this->e->params = $params;
-                    $this->e->inverse = $rule->inverse;
-                    if (is_string($result)) {
-                        $this->e->key = $result;
-                    }
 
+                if ($result !== true) {
+                    array_shift($params);
+                    $params[] = $is_array ? [] : '';
+                    $this->response->setErrorData($key, $rule->handler, $params);
                     break;
-                } elseif ($value instanceof UploadedFileInterface) {
-                    $this->uploaded[] = $value;
-                }     
+                }
             }
-    
+
             return $result;
         };
 
         if (is_array($value)) {
             $result = true;
             foreach ($value as $val) {
-                $res = $validate($val);
+                $res = $validate($val, $rule, true);
                 if ($res !== true) {
                     $result = $res;
                     break;
                 }
             }
         } else {
-            $result = $validate($value);
+            $result = $validate($value, $rule);
         }
-        
+
         return $result;
     }
 }

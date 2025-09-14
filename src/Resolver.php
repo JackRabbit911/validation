@@ -2,19 +2,22 @@
 
 namespace Az\Validation;
 
-use ReflectionMethod;
-use ReflectionFunction;
 use InvalidArgumentException;
 
 final class Resolver
 {
     private ValidationHandler $defaultHandler;
+    private ?object $userHandler = null;
 
     public $params;
 
-    public function __construct(ValidationHandler $handler)
+    public function __construct(?string $userHandler)
     {
-        $this->defaultHandler = $handler;
+        $this->defaultHandler = new ValidationHandler();
+
+        if ($userHandler) {
+            $this->userHandler = new $userHandler();
+        }
     }
 
     public function resolve($handler)
@@ -23,8 +26,11 @@ final class Resolver
             return $handler;
         }
 
-
         if (is_string($handler)) {
+            if ($this->userHandler && method_exists($this->userHandler, $handler)) {
+                return [$this->userHandler, $handler];
+            }
+
             if ($this->defaultHandler->_is_callable($handler)) {
                 return [$this->defaultHandler, $handler];
             }
@@ -38,35 +44,4 @@ final class Resolver
             sprintf('Function "%s" is not callable', $handler)
         );
     }
-
-    // private function setReflectionRarameters($handler, $params)
-    // {
-    //     if (is_array($handler) && method_exists($handler[0], $handler[1])) {
-    //         $refMethod = new ReflectionMethod($handler[0], $handler[1]);
-    //     } elseif (is_string($handler)) {
-    //         if (function_exists($handler)) {
-    //             $refMethod = new ReflectionFunction($handler);
-    //         } else {
-    //             $refMethod = new ReflectionMethod($handler);
-    //         }           
-    //     }
-
-    //     if (isset($refMethod)) {
-    //         foreach ($refMethod->getParameters() as $k => $refParam) {
-    //             $key = ':' . $refParam->getName();
-
-    //             if (!array_key_exists($k, $params)) {
-    //                 if ($refParam->isDefaultValueAvailable()) {
-    //                     $value = $refParam->getDefaultValue();
-    //                 }
-    //             } else {
-    //                 $value = $params[$k];
-    //             }
-
-    //             if (isset($value) && is_scalar($value)) {
-    //                 $result[$key] = $value;
-    //             }
-    //         }
-    //     } 
-    // }
 }

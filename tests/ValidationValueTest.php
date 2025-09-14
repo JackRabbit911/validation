@@ -13,42 +13,35 @@ use PHPUnit\Framework\TestCase;
 
 final class ValidationValueTest extends TestCase
 {
-    private $validator;
+    private $validation;
 
     public function setUp(): void
     {
         $message = new Message();
         $response = new Response($message);
-        $defaultHandler = new ValidationHandler();
-        $parser = new Parser();
-
-        $resolver = new Resolver($defaultHandler);
-        $validation = new Validation($response, $parser, $resolver);
-
-        $this->validator = new ValidationValue($parser, $resolver, $validation);
-
-        $this->validator->rule('length', 3, 8);
-        
-    }
-
-    public function testRule()
-    {
-        $this->validator->rule('minLength', 3);
-
-        $this->assertIsList($this->validator->rules);
-        $this->assertSame(2, count($this->validator->rules));
-        $this->assertIsObject($this->validator->rules[0]);
-        $this->assertIsObject($this->validator->rules[1]);
-
-        $this->assertSame('length', $this->validator->rules[0]->handler);
-        $this->assertSame([3, 8], $this->validator->rules[0]->params);
+        $this->validation = new Validation($response);
     }
 
     public function testCheck()
     {
-        $is_valid = $this->validator->check('foo');
-        $this->assertTrue($is_valid);
-        $is_valid = $this->validator->check('fo');
-        $this->assertFalse($is_valid);
+        $result = $this->validation->rule('foo', 'length(3, 8)')
+            ->check(['foo' => 'hello']);
+
+        $this->assertTrue($result);
+
+        $result = $this->validation->rule('baz', 'length(3, 8)')
+            ->check(['baz' => 'hello world!']);
+
+        $this->assertFalse($result);
+
+        $result = $this->validation->rule('bar', 'is_string')
+            ->check(['bar' => 'hello world!']);
+
+        $this->assertTrue($result);
+
+        $result = $this->validation->rule('ban', 'is_array')
+            ->check(['ban' => 'hello world!']);
+
+        $this->assertFalse($result);
     }
 }
