@@ -22,26 +22,18 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
         $this->validation->setLang($lang);
         
         $this->setRules($request);
-        
-        if (($response = $this->validate($request, $handler))) {           
-            return $response;
+
+        $data = $this->getData($request);
+        $files = $request->getUploadedFiles();
+
+        $success = $this->validation->check($data, $files, true);
+
+        if ($success) {
+            return $handler->handle($request);
         }
         
-
-        $validation_response = $this->validation->getResponse();
-
-        $validation_response = array_map(function ($a) {
-            return [
-                'status' => $a['status'],
-                'message' => $a['msg'],
-                'value' => $a['value'],
-            ];
-        }, $validation_response);
-
-        $response['success'] = false;
-        $response['error'] = $validation_response;
-
-        return new JsonResponse($response);
+        $validation_response = $this->validation->getResponse(true);
+        return new JsonResponse($validation_response);
     }
 
     protected function setRules(ServerRequestInterface $request) {}
@@ -49,18 +41,6 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
     protected function modifyData($data)
     {
         return $data;
-    }
-
-    protected function validate(ServerRequestInterface $request, RequestHandlerInterface $handler): ?ResponseInterface
-    {
-        $data = $this->getData($request);
-        $files = $request->getUploadedFiles();
-
-        if ($this->validation->check($data, $files)) {
-            return $handler->handle($request->withAttribute('data', $data));
-        }
-
-        return null;
     }
 
     private function getData($request)
@@ -71,13 +51,11 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
             $data = $request->getParsedBody();
         }
 
-        if (empty($data)) {
-            $data = $request->getQueryParams();
-        }
-
         if (is_string($data)) {
             $data = json_decode($data, true) ?? [];
         }
+
+        $data += $request->getQueryParams();
 
         return $data;
     }
