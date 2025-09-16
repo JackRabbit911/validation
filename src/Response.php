@@ -92,7 +92,7 @@ class Response implements ValidationResponseInterface
         ];
     }
 
-    private function getMsg(string $name, string $key, array $params): string
+    private function getMsg(string $name, string|array $key, array $params): string
     {
         if (isset($this->messages[$name])) {
             return sprintf($this->messages[$name], ...$params);
