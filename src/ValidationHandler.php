@@ -18,7 +18,7 @@ class ValidationHandler
         'alpha_num_utf8'=>['regexp', '/^[\w]*$/u'],
         'alpha_space'  => ['regexp', '/^[a-zA-Z\s]*$/u'],
         'alpha_space_utf8'=>['regexp', '/^[\pL\s]*$/u'],
-        'text_utf8'    => ['regexp', '/^[^<>]*$/u'],
+        'text_utf8'    => ['regexp', '/^[^<>;]*$/u'],
         'phone'        => ['regexp', '/^[\+\s\d\-()]{3,20}$/'],
         'phone_strict' => ['regexp', '/^[\d]{11,11}$/'],
         'hex_color'    => ['regexp', '/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
@@ -125,13 +125,21 @@ class ValidationHandler
 
     /***  functions for uploaded files  ***/
     
-    public function notEmpty(UploadedFileInterface $upFile)
+    public function notEmpty(?UploadedFileInterface $upFile)
     {
+        if (!$upFile) {
+            return false;
+        }
+
         return ($upFile->getError() !== UPLOAD_ERR_NO_FILE);
     }
 
-    public function size(UploadedFileInterface $upFile, $size)
+    public function size(?UploadedFileInterface $upFile, $size)
     {
+        if (!$upFile) {
+            return true;
+        }
+
         if ($upFile->getError() === UPLOAD_ERR_INI_SIZE) {
             return false;
         }
@@ -139,18 +147,18 @@ class ValidationHandler
         return ($upFile->getSize() <= $this->human2byte($size));
     }
 
-    public function mime(UploadedFileInterface $upFile, ...$mimes)
+    public function mime(?UploadedFileInterface $upFile, ...$mimes)
     {
-        if ($upFile->getError() === UPLOAD_ERR_NO_FILE) {
+        if (!$upFile || $upFile->getError() === UPLOAD_ERR_NO_FILE) {
             return true;
         }
 
         return in_array($upFile->getClientMediaType(), $mimes);
     }
 
-    public function ext(UploadedFileInterface $upFile, ...$extensions)
+    public function ext(?UploadedFileInterface $upFile, ...$extensions)
     {
-        if ($upFile->getError() === UPLOAD_ERR_NO_FILE) {
+        if (!$upFile || $upFile->getError() === UPLOAD_ERR_NO_FILE) {
             return true;
         }
         
@@ -158,18 +166,18 @@ class ValidationHandler
         return in_array(strtolower($ext), $extensions);
     }
 
-    public function type(UploadedFileInterface $upFile, $type)
+    public function type(?UploadedFileInterface $upFile, $type)
     {
-        if ($upFile->getError() === UPLOAD_ERR_NO_FILE) {
+        if (!$upFile || $upFile->getError() === UPLOAD_ERR_NO_FILE) {
             return true;
         }
 
         return (strpos($upFile->getClientMediaType(), $type) === 0);
     }
 
-    public function img(UploadedFileInterface $upFile)
+    public function img(?UploadedFileInterface $upFile)
     {
-        if ($upFile->getError() === UPLOAD_ERR_NO_FILE) {
+        if (!$upFile || $upFile->getError() === UPLOAD_ERR_NO_FILE) {
             return true;
         }
 

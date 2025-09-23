@@ -31,7 +31,7 @@ class Response implements ValidationResponseInterface
 
         foreach ($data as $name => $value) {
             if (isset($this->errorData[$name])) {
-                $response[$name] = $this->getError($name);
+                $response[] = $this->getApiError($name);
             }
         }
 
@@ -76,6 +76,18 @@ class Response implements ValidationResponseInterface
         return [
             'status' => 'success',
             'value' => $value,
+        ];
+    }
+
+    private function getApiError(string $key): array
+    {
+        $msg_key = $this->errorData[$key]['key'];
+        $params = $this->errorData[$key]['params'];
+        array_pop($params);
+
+        return [
+            'key' => $key,
+            'msg' => $this->getMsg($key, $msg_key, $params),
         ];
     }
 
