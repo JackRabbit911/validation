@@ -9,6 +9,10 @@ trait SantizeParams
         $is_value = false;
 
         foreach ($params as &$param) {
+            if (is_string($param)) {
+                $param = trim($param);
+            }
+
             switch ($param) {
                 case ':validation':
                     $param = $this->validation;
@@ -23,6 +27,7 @@ trait SantizeParams
                 default:
                     if (is_string($param) && strpos($param, ':') === 0) {
                         $key = substr($param, 1);
+                        
                         if (array_key_exists($key, $this->data)) {
                             $param = $this->data[$key];
                         }
