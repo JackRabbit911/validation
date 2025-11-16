@@ -112,10 +112,16 @@ final class ValidationHandlerTest extends TestCase
         $this->assertFalse($this->validator->inRange(0, 12, 21));
     }
 
+    public function testInList()
+    {
+        $this->assertTrue($this->validator->inList('foo', 'bar', 'foo', 123));
+        $this->assertFalse($this->validator->inList('foo', 'bar', 123));
+    }
+
     public function testInArray()
     {
-        $this->assertTrue($this->validator->inArray('foo', 'bar', 'foo', 123));
-        $this->assertFalse($this->validator->inArray('foo', 'bar', 123));
+        $this->assertTrue($this->validator->inArray('foo', ['bar', 'foo', 123]));
+        $this->assertFalse($this->validator->inArray('foo', ['bar', 123]));
     }
 
     public function testNotEmpty()
