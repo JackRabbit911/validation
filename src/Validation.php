@@ -27,6 +27,18 @@ class Validation
         return $this;
     }
 
+    public function reset()
+    {
+        $this->rules = [];
+        $this->data = [];
+        $this->check = [];
+    }
+
+    public function getRules()
+    {
+        return $this->rules;
+    }
+
     public function check($data, $files = [], $dot_notation = false)
     {
         $this->data = $dot_notation ?
@@ -40,7 +52,6 @@ class Validation
         $valid = new ValidationValue(
             $this->response,
             $this->rules,
-            $this->data,
             $this->userHandler,
         );
 
