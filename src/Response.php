@@ -47,7 +47,7 @@ class Response implements ValidationResponseInterface
     {
         $this->errorData[$key] = [
             'key' => $handler,
-            'params' => $params,
+            'params' => $this->flatten($params),
         ];
     }
 
@@ -83,7 +83,6 @@ class Response implements ValidationResponseInterface
     {
         $msg_key = $this->errorData[$key]['key'];
         $params = $this->errorData[$key]['params'];
-        array_pop($params);
 
         return [
             'key' => $key,
@@ -117,5 +116,16 @@ class Response implements ValidationResponseInterface
         }
 
         return $this->msg->get($key, $params);
+    }
+
+    private function flatten($array)
+    {
+        $result = [];
+
+        array_walk_recursive($array, function ($value) use (&$result) {
+            $result[] = $value;
+        });
+
+        return $result;
     }
 }
