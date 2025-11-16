@@ -118,9 +118,14 @@ class ValidationHandler
         return $min <= $value && $value <= $max;
     }
 
-    public function inArray($value, ...$array)
+    public function inArray($value, $array)
     {
         return in_array($value, $array);
+    }
+
+    public function inList($value, ...$list)
+    {
+        return in_array($value, $list);
     }
 
     /***  functions for uploaded files  ***/
