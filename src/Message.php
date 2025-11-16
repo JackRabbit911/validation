@@ -25,7 +25,7 @@ final class Message
 
         $message = $this->messages[$key] ?? $this->messages[$default] ?? 'Invalid data';
 
-        return sprintf($message, ...$params);
+        return $this->sprintf($message, $params);
     }
 
     public function setMsgKey($name, $key)
@@ -39,5 +39,15 @@ final class Message
             $file = trim($path, '/') . '/' . $this->lang . '.php';
             $this->messages = array_replace($this->messages, require $file);
         }
+    }
+
+    private function sprintf($str, $format)
+    {
+        if (str_contains($str, '%a')) {
+            $replace = '[' . join(', ', $format) . ']';
+            $str = str_replace('%a', $replace, $str);
+        }
+
+        return vsprintf($str, $format);
     }
 }
