@@ -120,12 +120,12 @@ class ValidationHandler
 
     public function inArray($value, $array)
     {
-        return in_array($value, $array);
+        return $value ? in_array($value, $array) : true;
     }
 
     public function inList($value, ...$list)
     {
-        return in_array($value, $list);
+        return $value ? in_array($value, $list) : true;
     }
 
     /***  functions for uploaded files  ***/
