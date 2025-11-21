@@ -6,7 +6,7 @@ final class Parser
 {
     use SantizeParams;
 
-    public function parse($rule)
+    public function parse($rule): array
     {
         foreach ($rule as &$array) {
             $array = $this->sparse($array['handler'], $array['params']);
@@ -16,7 +16,7 @@ final class Parser
             $result[] = $item;
         });
 
-        return $result;
+        return $result ?: [];
     }
 
     private function sparse($handler, $params)
@@ -48,8 +48,6 @@ final class Parser
 
             $handler = preg_replace($pattern, '', $handler);
         }
-
-        // return [$handler, $params];
 
         $inverse = $this->isInverse($handler);
 

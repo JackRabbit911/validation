@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-abstract class ApiValidationMiddleware implements MiddlewareInterface
+abstract class ApiValidationMiddleware implements MiddlewareInterface, IValidationMiddleware
 {
     protected Validation $validation;
 
@@ -20,7 +20,7 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
     ): ResponseInterface
     {
         $this->validation = container()->get(Validation::class);
-        $lang = $request->getHeaderLine('Accept-Language') ?? 'en';
+        $lang = $this->detectLang($request);
         $this->validation->setLang($lang);
 
         $this->setRules($request);
@@ -34,20 +34,12 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
 
     protected function setRules(ServerRequestInterface $request) {}
 
-    protected function getResponse(
-        ServerRequestInterface $request,
-        RequestHandlerInterface $handler,
-        bool $check,
-    ): ResponseInterface {
-        return $handler->handle($request);
-    }
-
     protected function modifyData($data)
     {
         return $data;
     }
 
-    private function getData($request)
+    protected function getData($request)
     {
         $data = $request->getBody()->getContents();
 
@@ -62,5 +54,35 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface
         $data += $request->getQueryParams();
 
         return $data;
+    }
+
+    private function detectLang(ServerRequestInterface $request, string $default = 'en')
+    {
+        $header = $request->getHeaderLine('Accept-Languages');
+
+        if (empty($header)) {
+            return $default;
+        }
+
+        $pattern = '/([a-z]{1,8}(-[a-z]{1,8})?)\s*(;\s*q\s*=\s*(1|0\.[0-9]+))?/i';
+
+        preg_match_all($pattern, $header, $matches);
+        $langs = [];
+
+        if (count($matches[1])) {
+            $langs = array_combine($matches[1], $matches[4]);
+
+            foreach ($langs as $lang => $q) {
+                if ($q === '') {
+                    $langs[$lang] = 1.0;
+                } else {
+                    $langs[$lang] = (float) $q;
+                }
+            }
+
+            arsort($langs, SORT_NUMERIC);
+        }
+
+        return substr(array_keys($langs)[0], 0, 2);
     }
 }

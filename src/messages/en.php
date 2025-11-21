@@ -27,6 +27,8 @@ return [
     'maxWordsCount' => 'The string must be no more than %s words long',
     'hex_color'     => 'Invalid color code',
     'inRange'       => 'Value must be in the range from %s to %s',
+    'inList'        => 'Value is not in array: %a',
+    'inArray'       => 'Value is not in array: %a',
 
     'required_one_of'=> 'One of the fields: (%s) must be filled',
     'email_or_phone' => 'The entered data does not match the email or phone number format',

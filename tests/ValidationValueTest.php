@@ -19,29 +19,31 @@ final class ValidationValueTest extends TestCase
     {
         $message = new Message();
         $response = new Response($message);
-        $this->validation = new Validation($response);
+        $validation = new Validation($response);
+
+        $validation->rule('list', 'inList(foo, bar)')
+            ->rule('in.arr', 'inArray', ['foo', 'bar'])
+            ->rule('len', 'length(3, 8)|is_string')
+            ->rule('str', 'is_string')
+            ->rule('arr', 'is_array');
+
+        $this->validation = new ValidationValue(
+            $response,
+            $validation->getRules()
+        );
     }
 
     public function testCheck()
     {
-        $result = $this->validation->rule('foo', 'length(3, 8)')
-            ->check(['foo' => 'hello']);
-
-        $this->assertTrue($result);
-
-        $result = $this->validation->rule('baz', 'length(3, 8)')
-            ->check(['baz' => 'hello world!']);
-
-        $this->assertFalse($result);
-
-        $result = $this->validation->rule('bar', 'is_string')
-            ->check(['bar' => 'hello world!']);
-
-        $this->assertTrue($result);
-
-        $result = $this->validation->rule('ban', 'is_array')
-            ->check(['ban' => 'hello world!']);
-
-        $this->assertFalse($result);
+        $this->assertTrue($this->validation->check('bar', 'list'));
+        $this->assertFalse($this->validation->check('ban', 'list'));
+        $this->assertTrue($this->validation->check('bar', 'in.arr'));
+        $this->assertFalse($this->validation->check('ban', 'in.arr'));
+        $this->assertTrue($this->validation->check('hello', 'len'));
+        $this->assertFalse($this->validation->check('hello, world!', 'len'));
+        $this->assertTrue($this->validation->check('hello', 'str'));
+        $this->assertFalse($this->validation->check(123, 'str'));
+        $this->assertFalse($this->validation->check(123, 'arr'));
+        $this->assertTrue($this->validation->check([1,2,3], 'arr'));
     }
 }
