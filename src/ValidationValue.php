@@ -12,6 +12,7 @@ final class ValidationValue
     public function __construct(
         private Response $response,
         private array $rules,
+        private array $data,
         private ?string $userHandler = null,
     ) {
         $this->parser = new Parser();

@@ -14,11 +14,8 @@ trait SantizeParams
             }
 
             switch ($param) {
-                case ':validation':
-                    $param = $this->validation;
-                    break;
                 case ':data':
-                    $param = $this->validation->data;
+                    $param = $this->data;
                     break;
                 case ':value':
                     $param = $value;

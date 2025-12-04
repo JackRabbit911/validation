@@ -52,6 +52,7 @@ class Validation
         $valid = new ValidationValue(
             $this->response,
             $this->rules,
+            $this->data,
             $this->userHandler,
         );
 
