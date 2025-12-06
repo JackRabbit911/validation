@@ -58,7 +58,7 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface, IValidati
 
     private function detectLang(ServerRequestInterface $request, string $default = 'en')
     {
-        $header = $request->getHeaderLine('Accept-Languages');
+        $header = $request->getHeaderLine('Accept-Language');
 
         if (empty($header)) {
             return $default;
