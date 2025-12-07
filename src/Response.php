@@ -16,7 +16,7 @@ class Response implements ValidationResponseInterface
 
         foreach ($data as $name => $value) {
             if (isset($this->errorData[$name])) {
-                $response[$name] = $this->getError($name);
+                $response[$name] = $this->getError($name, $value);
             } else {
                 $response[$name] = $this->getSuccess($value);
             }
@@ -90,11 +90,10 @@ class Response implements ValidationResponseInterface
         ];
     }
 
-    private function getError(string $key): array
+    private function getError(string $key, $value): array
     {
         $msg_key = $this->errorData[$key]['key'];
         $params = $this->errorData[$key]['params'];
-        $value = array_pop($params);
 
         return [
             'status' => 'error',
