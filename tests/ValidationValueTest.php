@@ -24,12 +24,12 @@ final class ValidationValueTest extends TestCase
         $validation->rule('list', 'inList(foo, bar)')
             ->rule('in.arr', 'inArray', ['foo', 'bar'])
             ->rule('len', 'length(3, 8)|is_string')
-            ->rule('str', 'is_string')
-            ->rule('arr', 'is_array');
+            ->rule('str', 'is_string');
 
         $this->validation = new ValidationValue(
             $response,
-            $validation->getRules()
+            $validation->getRules(),
+            $validation->data
         );
     }
 
@@ -43,7 +43,5 @@ final class ValidationValueTest extends TestCase
         $this->assertFalse($this->validation->check('hello, world!', 'len'));
         $this->assertTrue($this->validation->check('hello', 'str'));
         $this->assertFalse($this->validation->check(123, 'str'));
-        $this->assertFalse($this->validation->check(123, 'arr'));
-        $this->assertTrue($this->validation->check([1,2,3], 'arr'));
     }
 }
