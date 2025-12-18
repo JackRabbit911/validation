@@ -81,14 +81,20 @@ abstract class ValidationMiddleware implements MiddlewareInterface
 
     private function getData($request)
     {
-        $data = $request->getBody()->getContents();
-
+        $data = $request->getParsedBody();
+        
         if (empty($data)) {
-            $data = $request->getParsedBody();
+            $data = $request->getBody()->getContents();
         }
 
         if (is_string($data)) {
-            $data = json_decode($data, true);
+            $result = json_decode($data, true);
+
+            if (json_last_error() > 0 ) {
+                parse_str($data, $data);
+            } else {
+                return $result;
+            }
         }
 
         return $data;
