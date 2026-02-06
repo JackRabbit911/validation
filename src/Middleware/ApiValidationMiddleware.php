@@ -13,6 +13,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 abstract class ApiValidationMiddleware implements MiddlewareInterface, IValidationMiddleware
 {
     protected Validation $validation;
+    protected array $data;
 
     public function process(
         ServerRequestInterface $request,
@@ -22,12 +23,12 @@ abstract class ApiValidationMiddleware implements MiddlewareInterface, IValidati
         $this->validation = container()->get(Validation::class);
         $lang = $this->detectLang($request);
         $this->validation->setLang($lang);
+        $this->data = $this->getData($request);
 
         $this->setRules($request);
 
-        $data = $this->getData($request);
         $files = $request->getUploadedFiles();        
-        $check = $this->validation->check($data, $files, true);
+        $check = $this->validation->check($this->data, $files, true);
 
         return $this->getResponse($request, $handler, $check);
     }
