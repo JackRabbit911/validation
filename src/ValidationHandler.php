@@ -109,8 +109,13 @@ class ValidationHandler
 
     public function validDate($value, $format = 'Y-m-d')
     {
+        if (empty($value)) {
+            return true;
+        }
+
         $d = \DateTime::createFromFormat($format, $value);
-        return (empty($value)) ? true : ($d && $d->format($format) == $value);
+        
+        return ($d && $d->format($format) == $value);
     }
 
     public function inRange($value, $min, $max)
