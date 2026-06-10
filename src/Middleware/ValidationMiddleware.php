@@ -75,21 +75,23 @@ abstract class ValidationMiddleware implements MiddlewareInterface
         RequestHandlerInterface $handler,
         string $path,
     ): ResponseInterface {
-        $response = $this->validation->getResponse();
         $ref = parse_url($request->getServerParams()['HTTP_REFERER'], PHP_URL_PATH);
 
         if (is_ajax($request)) {
+            $response = $this->validation->getResponse(true);
             return new JsonResponse([
                 'success' => false,
                 'error' => $response,
-            ]);
+            ], $this->validation->statusCode());
         }
+
+        $response = $this->validation->getResponse();
 
         if ($ref === $path) {
             return $handler->handle($request->withAttribute('validation', $response));
         } else {
             $session = $request->getAttribute('session');
-            $session->flash('validation', $this->validation->getResponse());
+            $session->flash('validation', $response);
             return new RedirectResponse($request->getServerParams()['HTTP_REFERER'], 302);
         }
     }
