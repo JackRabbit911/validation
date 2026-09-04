@@ -9,19 +9,19 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Sys\Template\Form;
 
 abstract class ValidationMiddleware implements MiddlewareInterface
 {
-    protected Validation $validation;
+    
     protected ?string $path = null;
+
+    public function __construct(protected Validation $validation){}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->validation = container()->get(Validation::class);
         $lang = $request->getAttribute('i18n')?->lang() ?? 'en';
         $this->validation->setLang($lang);
-
+        
         $this->setPath();
         $path = rawurldecode(rtrim($request->getUri()->getPath(), '/'));
 
@@ -31,7 +31,7 @@ abstract class ValidationMiddleware implements MiddlewareInterface
 
         $data = ($request->getMethod() === 'GET') ? $request->getQueryParams()
             : $this->getData($request);
-
+        
         $this->setRules($request);
 
         $data = $this->validate($request, $data);
@@ -40,9 +40,11 @@ abstract class ValidationMiddleware implements MiddlewareInterface
 
         $this->debug($request, $data);
 
+        $GLOBALS['request'] = $request;
+
         return ($data !== null) ? $handler->handle($request
-            ->withParsedBody($data))
-            : $this->errorHandler($request, $handler, $path);
+                ->withParsedBody($data))
+            : $this->errorHandler($request);
     }
 
     protected function setPath() {}
@@ -54,8 +56,7 @@ abstract class ValidationMiddleware implements MiddlewareInterface
         return $request;
     }
 
-    protected function modifyData($data)
-    {
+    protected function modifyData($data) {
         return $data;
     }
 
@@ -63,37 +64,19 @@ abstract class ValidationMiddleware implements MiddlewareInterface
     {
         $files = $request->getUploadedFiles();
 
-        if ($this->validation->check($data, $files, true)) {
+        if ($this->validation->check($data, $files)) {
             return $this->modifyData($data);
         }
 
         return null;
     }
 
-    protected function errorHandler(
-        ServerRequestInterface $request,
-        RequestHandlerInterface $handler,
-        string $path,
-    ): ResponseInterface {
-        $ref = parse_url($request->getServerParams()['HTTP_REFERER'], PHP_URL_PATH);
-
-        if (is_ajax($request)) {
-            $response = $this->validation->getResponse(true);
-            return new JsonResponse([
-                'success' => false,
-                'error' => $response,
-            ], $this->validation->statusCode());
-        }
-
-        $response = $this->validation->getResponse();
-
-        if ($ref === $path) {
-            return $handler->handle($request->withAttribute('validation', $response));
-        } else {
-            $session = $request->getAttribute('session');
-            $session->flash('validation', $response);
-            return new RedirectResponse($request->getServerParams()['HTTP_REFERER'], 302);
-        }
+    protected function errorHandler(ServerRequestInterface $request): ResponseInterface
+    {
+        $session = $request->getAttribute('session');
+        $session->flash('validation', $this->validation->getResponse());
+        
+        return new RedirectResponse($request->getServerParams()['HTTP_REFERER'], 302);
     }
 
     protected function debug(ServerRequestInterface $request, $data) {}
@@ -101,7 +84,7 @@ abstract class ValidationMiddleware implements MiddlewareInterface
     private function getData($request)
     {
         $data = $request->getParsedBody();
-
+        
         if (empty($data)) {
             $data = $request->getBody()->getContents();
         }
@@ -109,7 +92,7 @@ abstract class ValidationMiddleware implements MiddlewareInterface
         if (is_string($data)) {
             $result = json_decode($data, true);
 
-            if (json_last_error() > 0) {
+            if (json_last_error() > 0 ) {
                 parse_str($data, $data);
             } else {
                 return $result;
